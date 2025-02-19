@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv, dotenv_values 
 import requests
-import json
+import sys
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 
@@ -29,16 +29,7 @@ months = {1: "Januar",
           11: "November",
           12: "Dezember"}
 
-# search_params = {"filter": {"value": "database", "property": "object"}}
-
-# search_response = requests.post(f'https://api.notion.com/v1/search', 
-#     json=search_params, headers=headers)
-
-# res_json = search_response.json()["results"]
-
-# for res in res_json:
-#     print(res["id"], res["url"])
-
+argv = sys.argv
 
 def create_summary_page(month, company):
     page_exist_params = {"filter": {"and": [
@@ -158,10 +149,7 @@ def create_summary_page(month, company):
         "https://api.notion.com/v1/pages",
         json=create_page_body, 
         headers=headers)
-    print(create_response.json())
-
-
-
+    print(create_response.json()["url"])
 
 def get_date_range(month: int, year: int = None):
     if year is None:
@@ -179,5 +167,5 @@ def get_date_range(month: int, year: int = None):
 
     return start_date, end_date
 
-
-create_summary_page(1, "eea")
+if len(argv) == 3:
+    create_summary_page(int(argv[1]), argv[2])
