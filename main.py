@@ -1,18 +1,36 @@
 import os
-from dotenv import load_dotenv, dotenv_values 
 import requests
-import sys
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 import argparse
+import json
 
-load_dotenv() 
 
-NOTION_KEY = os.getenv("API_KEY")
-page_id = os.getenv("PAGE_ID")
-db_id = os.getenv("DB_ID")
-list_id = os.getenv("LIST_ID")
+# CLI
+parser = argparse.ArgumentParser(prog="Notion-Working Hours")
+parser.add_argument("-m", "--month", nargs="*", type=int, default=datetime.now().month)
+parser.add_argument("-y", "--year", nargs="*", type=int, default=datetime.now().year)
+parser.add_argument("-c", "--company", nargs="*", type=str, required=True)
 
+defaultConfigPath = f"{os.getenv("LOCALAPPDATA")}\\notion-working-hours\\config.json"
+parser.add_argument("-s", "--settings", "--config", type=str, nargs="?", default=defaultConfigPath)
+
+args = parser.parse_args()
+
+if os.path.exists(args.settings):
+    with open(args.settings, "r") as file:
+        config = json.load(file)
+elif os.path.exists(defaultConfigPath):
+    with open(defaultConfigPath, "r") as file:
+        config = json.load(file)
+else:
+    raise Exception("Config file missing")
+
+NOTION_KEY = config["NOTION_KEY"]
+db_id = config["DB_ID"]
+list_id = config["LIST_ID"]
+
+# Setup
 headers = {'Authorization': f"Bearer {NOTION_KEY}", 
            'Content-Type': 'application/json', 
            'Notion-Version': '2022-06-28'}
@@ -29,6 +47,9 @@ months = {1: "Januar",
           10: "Oktober",
           11: "November",
           12: "Dezember"}
+
+
+
 
 def create_summary_page(company, month=datetime.now().month, year=datetime.now().year):
     page_exist_params = {"filter": {"and": [
@@ -177,17 +198,10 @@ def get_date_range(month: int, year: int = None):
 
     return start_date, end_date
 
-# if len(argv) == 3:
-#     create_summary_page(int(argv[1]), argv[2])
-
-parser = argparse.ArgumentParser(prog="Notion-Working Hours")
-parser.add_argument("-m", "--month", nargs="*", type=int, default=datetime.now().month)
-parser.add_argument("-y", "--year", nargs="*", type=int, default=datetime.now().year)
-parser.add_argument("-c", "--company", nargs="*", type=str, required=True)
-
-args = parser.parse_args()
-
 for company in args.company:
+    print(company)
     for year in args.year:
+        print(year)
         for month in args.month:
+            print(month)
             create_summary_page(company, month, year)
