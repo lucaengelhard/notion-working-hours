@@ -67,6 +67,10 @@ def create_summary_page(company, month=datetime.now().month, year=datetime.now()
     
     res_json = search_response.json()["results"]
 
+    if len(res_json) == 0:
+        print(f"Keine Stunden eingetragen für {company} im {months[month]} {year}")
+        return
+
     total_hours = 0
 
     children = [{
