@@ -4,6 +4,7 @@ import requests
 import sys
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+import argparse
 
 load_dotenv() 
 
@@ -29,12 +30,11 @@ months = {1: "Januar",
           11: "November",
           12: "Dezember"}
 
-argv = sys.argv
-
-def create_summary_page(month, company):
+def create_summary_page(company, month=datetime.now().month, year=datetime.now().year):
     page_exist_params = {"filter": {"and": [
         {"property": "Company", "select": {"equals": company}},
         {"property": "Month", "select": {"equals": months[month]}},
+        {"property": "Year", "number": {"equals": year}}
     ]}}
 
 
@@ -55,8 +55,8 @@ def create_summary_page(month, company):
         "filter":{
             "and": [
                 {"property": "Company", "select": {"equals": company}},
-                  {"property": "Date", "date": {"on_or_after": get_date_range(month)[0]}},
-                  {"property": "Date", "date": {"on_or_before": get_date_range(month)[1]}}
+                  {"property": "Date", "date": {"on_or_after": get_date_range(month - 1, year)[0]}},
+                  {"property": "Date", "date": {"on_or_before": get_date_range(month - 1, year)[1]}}
                   ]},
         "sorts": [{"property": "Date", "direction": "ascending"}]
                   }
@@ -120,6 +120,9 @@ def create_summary_page(month, company):
             },
             "Month": {
                 "select": {"name": months[month]}
+            },
+            "Year": {
+                "number": year
             }
         },
         "children": [
@@ -138,7 +141,7 @@ def create_summary_page(month, company):
             "paragraph": {
                 "rich_text": [{
                     "type": "text",
-                    "text": {"content": f"Insgesamt: {int(total_hours)}h"}
+                    "text": {"content": f"Insgesamt: {total_hours}h"}
                 }]
             }
         }
@@ -152,6 +155,9 @@ def create_summary_page(month, company):
     print(create_response.json()["url"])
 
 def get_date_range(month: int, year: int = None):
+    if month == 0:
+        month = 12
+
     if year is None:
         year = datetime.today().year  # Default to current year
 
@@ -167,5 +173,17 @@ def get_date_range(month: int, year: int = None):
 
     return start_date, end_date
 
-if len(argv) == 3:
-    create_summary_page(int(argv[1]), argv[2])
+# if len(argv) == 3:
+#     create_summary_page(int(argv[1]), argv[2])
+
+parser = argparse.ArgumentParser(prog="Notion-Working Hours")
+parser.add_argument("-m", "--month", nargs="*", type=int, default=datetime.now().month)
+parser.add_argument("-y", "--year", nargs="*", type=int, default=datetime.now().year)
+parser.add_argument("-c", "--company", nargs="*", type=str, required=True)
+
+args = parser.parse_args()
+
+for company in args.company:
+    for year in args.year:
+        for month in args.month:
+            create_summary_page(company, month, year)
